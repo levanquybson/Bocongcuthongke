@@ -1,0 +1,639 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>📊 Bộ công cụ thống kê</title>
+
+<style>
+  /* ====== Global theme & layout ====== */
+
+ /* ====== Global theme & layout ====== */
+  :root{
+    --bg:#f7f9fb;
+    --panel:#ffffff;
+    --primary:#14b8a6;
+    --primary-600:#0d9488;
+    --muted:#6b7280;
+    --shadow: 0 8px 24px rgba(2,6,23,0.08);
+    --btn-radius:12px;
+  }
+
+  body{font-family:"Segoe UI", Roboto, "Times New Roman", serif; background:var(--bg); margin:0; padding:28px; color:#0f172a;}
+  h1{margin:0 0 10px;font-size:24px;color:var(--primary-600);text-align:center}
+  .topbar{display:flex;justify-content:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+  .nav-btn{background:var(--primary); color:white; border:none; padding:12px 18px; border-radius:var(--btn-radius); cursor:pointer; font-weight:700; box-shadow:var(--shadow); transition:transform .18s, box-shadow .18s;}
+  /* hover: lift and subtle shake */
+  @keyframes hover-shake {
+    0% { transform: translateY(-4px) rotate(0deg); }
+    30% { transform: translateY(-6px) rotate(-1deg); }
+    60% { transform: translateY(-6px) rotate(1deg); }
+    100% { transform: translateY(-4px) rotate(0deg); }
+  }
+  .nav-btn:hover{ animation: hover-shake .45s ease; box-shadow: 0 14px 30px rgba(2,6,23,0.12); }
+
+  /* container for views */
+  .view{ display:none; background:var(--panel); padding:18px; border-radius:14px; box-shadow:var(--shadow); max-width:1100px; margin:0 auto 28px; }
+  .view.active{ display:block; }
+
+  /* common small styles */
+  .btn { padding:10px 16px; border-radius:10px; border:0; cursor:pointer; font-weight:700; box-shadow:0 8px 20px rgba(2,6,23,0.06); }
+  .btn:active{ transform: translateY(2px); }
+  .btn-add{ background:#0ea5a0; color:#fff; }
+  .btn-calc{ background:#22c55e; color:#fff; }
+  .btn-reset{ background:#ef4444; color:#fff; }
+
+  table{ width:100%; border-collapse:collapse; margin-top:12px; background: #fff; border-radius:10px; overflow:hidden; box-shadow: 0 6px 18px rgba(2,6,23,0.04); }
+  th,td{ padding:8px 10px; border:1px solid rgba(0,0,0,0.06); text-align:center; }
+  th{ background: #dff6f1; color:var(--primary-600); font-weight:700; }
+  input[type="number"], input[type="text"]{ padding:6px;border-radius:6px;border:1px solid #ccc; width:100%; text-align:center; box-sizing:border-box; }
+
+  
+ 
+.container-cols .col {
+  flex: 0 0 calc(50% - 22px);
+}.container-cols {
+    display: flex;
+    gap: 22px;
+    margin-top: 16px;
+    flex-wrap: wrap; /* nếu muốn xuống dòng khi không đủ chỗ */
+}
+
+.container-cols > div {
+  border: 2px solid #ccc;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+  .card{ flex:1; min-width:260px; background:#fff;padding:14px;border-radius:10px; box-shadow: 0 3px 10px rgba(2,6,23,0.04); }
+  .formula h3, .output h3{ margin:6px 0 10px;color:#0f4ea8; }
+  .output p{ margin:6px 0; }
+
+  /* small animations */
+  .show{ opacity:1; transform:none; transition:all .45s ease; }
+  .hide{ opacity:0; transform:translateY(10px); transition:all .25s ease; }
+
+  /* shake for invalid */
+  @keyframes shake { 0%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} 100%{transform:translateX(0)} }
+  .shake{ animation:shake .36s ease; border-color:#ef4444 !important; }
+
+  pre.small { background:#f1f6f5; padding:8px; border-radius:8px; overflow:auto; font-size:13px; }
+
+  /* Responsive */
+  @media(max-width:900px){
+    .container-cols{ flex-direction:column; }
+  }
+
+
+  /* Table */
+  table { width:100%; border-collapse:collapse; margin-top:15px; background:var(--panel); border-radius:12px; overflow:hidden; box-shadow:var(--shadow); }
+  th { background:var(--teal-300); color:var(--teal-600); font-weight:600; }
+  th, td { border:1px solid var(--border); padding:8px; text-align:center; }
+  td input { width:95%; padding:8px; border-radius:6px; border:1px solid rgba(0,0,0,0.06); background:transparent; color:inherit; }
+
+table { border-collapse: collapse; margin-top: 10px; background: white; border-radius: 10px; overflow: hidden; }
+  td, th { border: 1px solid #ccc; padding: 8px 12px; text-align: center; }
+  th { background: #aef0e4; }
+  input { width: 80px; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding: 4px; }
+
+  /* Result box */
+  #result { margin-top:20px; background:var(--code-bg); border-left:6px solid var(--teal-600); padding:16px; border-radius:8px; font-size:16px; box-shadow:var(--shadow); }
+
+  /* Floating toolbar */
+  .floating-toolbar { position:fixed; right:18px; bottom:18px; display:flex; flex-direction:column; gap:10px; z-index:1200; }
+  .toolbar-btn { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--panel); border:1px solid var(--border); box-shadow:var(--shadow); cursor:pointer; transition:transform .12s,background .12s; }
+  .toolbar-btn:hover{ transform:translateY(-6px); }
+  .toolbar-btn svg{ width:22px; height:22px; fill:var(--teal-500); }
+
+  /* Tooltip modern (for validation) */
+  .tooltip-modern{ position:absolute; background:var(--teal-600); color:white; padding:6px 10px; border-radius:8px; font-size:13px; box-shadow:0 6px 18px rgba(2,6,23,0.12); transform:translateY(-8px); white-space:nowrap; z-index:1000; }
+  .tooltip-modern::after{ content:''; position:absolute; left:50%; transform:translateX(-50%); bottom:-6px; border-width:6px 6px 0 6px; border-style:solid; border-color:var(--teal-600) transparent transparent transparent; }
+
+
+
+  body { font-family: "Times New Roman"; margin: 30px; background: #fff9e6; }
+  h2{margin:0 0 10px;font-size:22px;color:var(--primary-600);text-align:center}
+  .topbar{display:flex;justify-content:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+  .nav-btn{background:var(--primary); color:white; border:none; padding:12px 18px; border-radius:var(--btn-radius); cursor:pointer; font-weight:700; box-shadow:var(--shadow); transition:transform .18s, box-shadow .18s;}
+
+  .btn-add { background: #17a2b8; color: white; }
+  .btn-add:hover { background: #138496; }
+  .btn-calc { background: #28a745; color: white; }
+  .btn-calc:hover { background: #1e7e34; }
+  .btn-reset { background: #dc3545; color: white; }
+  .btn-reset:hover { background: #b21f2d; }
+
+ h3{margin:0 0 10px;font-size:20px;color:var(--primary-600);text-align:center}
+  .topbar{display:flex;justify-content:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+  .nav-btn{background:var(--primary); color:white; border:none; padding:12px 18px; border-radius:var(--btn-radius); cursor:pointer; font-weight:700; box-shadow:var(--shadow); transition:transform .18s, box-shadow .18s;}
+
+  .btn-add { background: #17a2b8; color: white; }
+  .btn-add:hover { background: #138496; }
+  .btn-calc { background: #28a745; color: white; }
+  .btn-calc:hover { background: #1e7e34; }
+  .btn-reset { background: #dc3545; color: white; }
+  .btn-reset:hover { background: #b21f2d; }
+
+
+
+table { border-collapse: collapse; margin-top: 10px; background: white; border-radius: 10px; overflow: hidden; }
+  td, th { border: 1px solid #ccc; padding: 8px 12px; text-align: center; }
+  th { background: #aef0e4; }
+  input { width: 80px; text-align: center; border: 1px solid #ccc; border-radius: 4px; padding: 4px; }
+
+
+th:nth-child(1), td:nth-child(1) {
+  width: 150px;
+}
+
+
+</style>
+</head>
+<body>
+
+<h1>📊 BỘ CÔNG CỤ THỐNG KÊ</h1>
+<p style="font-weight:bold; font-style:italic; color:#16a34a; text-align:center">
+    "Trong thống kê, người ta không thể đưa ra một kết luận chắc chắn, nhưng có thể đưa ra một dự đoán hợp lý dựa trên dữ liệu."
+  </p>
+
+<div class="topbar">
+  <button class="nav-btn" data-view="A" onclick="showView('A')">📘 Mẫu số liệu gốc</button>
+  <button class="nav-btn" data-view="B" onclick="showView('B')">📗 Mẫu số liệu không ghép nhóm</button>
+  <button class="nav-btn" data-view="C" onclick="showView('C')">📙 Mẫu số liệu ghép nhóm</button>
+</div>
+
+<!-- ==================== VIEW A: from initial "CÁC SỐ ĐẶC TRƯNG CỦA MẪU SỐ LIỆU GỐC" (text input) ==================== -->
+<section id="view_A" class="view">
+  <h3 style="text-align:center">📊 CÁC SỐ ĐẶC TRƯNG CỦA MẪU SỐ LIỆU GỐC</h3>
+
+  <p>Nhập dãy số liệu cách nhau bằng dấu phẩy hoặc khoảng trắng:</p>
+  <input id="A_dataInput" type="text" placeholder="VD: 2, 5, 3, 2, 6, 5, 5, 3" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc" />
+
+  <div style="margin-top:12px">
+    <button class="btn btn-calc" onclick="A_processData()">📈 Tạo bảng & Tính thống kê</button>
+    <button class="btn btn-reset" onclick="A_resetPage()">🔁 Làm lại</button>
+  </div>
+
+  <div id="A_freqTableDiv"></div>
+  <div id="A_result"></div>
+
+</section>
+
+<!-- ==================== VIEW B: non-grouped table values & freqs ==================== -->
+<section id="view_B" class="view">
+  <h3 style="text-align:center">📊 CÁC SỐ ĐẶC TRƯNG CỦA MẪU SỐ LIỆU KHÔNG GHÉP NHÓM</h3>
+
+   <p>Nhập các <b>giá trị</b> ở dòng 1 và <b>tần số</b> ở dòng 2:</p>
+
+  <table id="B_dataTable">
+    <tr id="B_valuesRow">
+      <th>Giá trị $x_i$</sub></th>
+      <td><input type="number"></td>
+      <td><input type="number"></td>
+      <td><input type="number"></td>
+    </tr>
+    <tr id="B_freqRow">
+      <th>Tần số $f_i$</sub></th>
+      <td><input type="number"></td>
+      <td><input type="number"></td>
+      <td><input type="number"></td>
+    </tr>
+  </table>
+
+  <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap">
+    <button class="btn btn-add" onclick="B_addColumn()">➕ Thêm cột</button>
+    <button class="btn btn-add" onclick="B_removeColumn()">❌ Xóa cột</button>
+    <button class="btn btn-calc" onclick="B_calcStats()">📈 Tính thống kê</button>
+    <button class="btn btn-reset" onclick="B_resetTable()">🔁 Làm lại</button>
+  </div>
+
+  <div id="B_result"></div>
+</section>
+
+<!-- ==================== VIEW C: grouped data (classes) ==================== -->
+<section id="view_C" class="view">
+  <h3 style="text-align:center">📊 CÁC SỐ ĐẶC TRUNG CỦA MẪU SỐ LIỆU GHÉP NHÓM</h3>
+   <p>Nhập nhóm (ví dụ nhóm [1;2) thì nhập <b>1-2</b>) ở dòng 1 và <b>tần số</b> ở dòng 3:</p>
+
+  <table id="C_dataTable">
+    <tr id="C_row-class"><th>Nhóm [a;b)</th></tr>
+    <tr id="C_row-mid"><th>Giá trị đại diện $m_i$</sub></th></tr>
+    <tr id="C_row-freq"><th>Tần số $f_i$</sub></th></tr>
+  </table>
+
+  <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap">
+    <button class="btn btn-add" onclick="C_addColumn()">➕ Thêm nhóm</button>
+    <button class="btn btn-add" onclick="C_removeColumn()">❌ Xóa nhóm</button>
+    <button class="btn btn-calc" onclick="C_processGrouped()">📈 Tính thống kê</button>
+    <button class="btn btn-reset" onclick="C_resetPage()">🔁 Làm lại</button>
+  </div>
+
+  <div id="C_result"></div>
+</section>
+
+<!-- MathJax loaded once -->
+<script>
+  window.MathJax = { tex: { inlineMath: [['\\(','\\)'], ['$', '$']] }, svg: { fontCache: 'global' } };
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<script>
+/* ================= view switcher ================= */
+function showView(which){
+  document.querySelectorAll('.view').forEach(v=> v.classList.remove('active'));
+  const s = document.getElementById('view_' + which);
+  if(s) s.classList.add('active');
+  // scroll to top of view
+  s.scrollIntoView({behavior:'smooth'});
+}
+// default open A
+showView('A');
+
+/* =============== VIEW A functions (text input -> expanded array) =============== */
+function A_resetPage(){
+  document.getElementById('A_dataInput').value='';
+  document.getElementById('A_freqTableDiv').innerHTML='';
+  document.getElementById('A_result').innerHTML='';
+}
+function A_processData(){
+  const input = document.getElementById('A_dataInput').value.trim();
+  if(!input) return alert("Vui lòng nhập dữ liệu!");
+  let values = input.split(/[\s,]+/).map(Number).filter(x=>!isNaN(x));
+  if(values.length===0) return alert("Dữ liệu không hợp lệ!");
+  // frequency map
+  const freqMap = {};
+  values.forEach(v=> freqMap[v]=(freqMap[v]||0)+1);
+  const uniqueValues = Object.keys(freqMap).map(Number).sort((a,b)=>a-b);
+  let tableHTML = '<h3>Bảng tần số</h3><table><tr><th>Giá trị $x_i$</th>';
+  uniqueValues.forEach(v=> tableHTML += `<td>${v}</td>`); tableHTML+='</tr><tr><th>tần số $f_i$</th>';
+  uniqueValues.forEach(v=> tableHTML += `<td>${freqMap[v]}</td>`); tableHTML+='</tr></table>';
+  document.getElementById('A_freqTableDiv').innerHTML = tableHTML;
+
+  const n = values.length;
+  const mean = values.reduce((s,v)=>s+v,0)/n;
+  const sorted = [...values].sort((a,b)=>a-b);
+  const median = n%2===1 ? sorted[(n-1)/2] : (sorted[n/2-1]+sorted[n/2])/2;
+  let lower = sorted.slice(0, Math.floor(n/2));
+  let upper = sorted.slice(Math.ceil(n/2));
+  const medianOfArray = arr => arr.length===0?NaN: arr.length%2===1? arr[(arr.length-1)/2]:(arr[arr.length/2-1]+arr[arr.length/2])/2;
+  const Q1 = medianOfArray(lower);
+  const Q3 = medianOfArray(upper);
+  const frequencies = Object.values(freqMap);
+  const allEqual = frequencies.every(v => v === frequencies[0]);
+  let modeStr = "";
+  if(allEqual) modeStr = "Không có mốt";
+  else {
+    const maxF = Math.max(...frequencies);
+    const modes = Object.keys(freqMap).filter(k => freqMap[k] === maxF).map(Number);
+    modeStr = modes.join(", ");
+  }
+  const variance = values.reduce((s,v)=>s+(v-mean)**2,0)/n;
+  const stddev = Math.sqrt(variance);
+  const IQR = Q3-Q1;
+  const lowerBound = Q1-1.5*IQR;
+  const upperBound = Q3+1.5*IQR;
+  const outliers = sorted.filter(v=>v<lowerBound || v>upperBound);
+  const outlierText = outliers.length>0 ? outliers.join(', ') : 'Không có';
+
+  
+ 
+const resultHTML = `
+  <div class="container-cols">
+    <div class="card formula">
+      <h3>📘 Công thức</h3>
+      
+      <p><b>📌Trung bình cộng:</b> \\(\\bar{x} = \\dfrac{\\sum x_i}{n}\\)</p>
+      <p><b>📌Trung vị :</b> \\(
+        Me = \\begin{cases} 
+        x_{(n+1)/2}, & n \\text{ lẻ} \\\\ 
+        \\dfrac{x_{n/2} + x_{n/2+1}}{2}, & n \\text{ chẵn} 
+        \\end{cases} \\)</p>
+      <p><b>📌Tứ phân vị:</b> $Q_1, Q_3$ là trung vị của nửa dưới và nửa trên</p>
+      <p><b>📌Mốt:</b> giá trị xuất hiện nhiều nhất</p>
+      <p><b>📌Phương sai:</b> \\(\\sigma^2 = \\dfrac{\\sum (x_i-\\bar{x})^2}{n}\\)</p>
+      <p><b>📌Độ lệch chuẩn:</b> \\(\\sigma = \\sqrt{\\sigma^2}\\)</p>
+      <p><b>📌Giá trị bất thường:</b> ngoài đoạn $[\Q_1-1.5 ΔQ; \Q_3+1.5.ΔQ]$</p>
+    </div> 
+    <div class="output">
+
+ <h3>📘 Kết quả</h3>
+
+      <p><b>👉Số phần tử $n=$</b> ${n}</p>
+      <p><b>👉Trung bình cộng $\\bar{x}̄=$</b> ${mean.toFixed(3)}</p>
+      <p><b>👉Trung vị $M_e=Q_2=$</b> ${median}</p>
+      <p><b>👉Tứ phân vị:</b> $Q_1 =$ ${Q1}, $Q_3$ = ${Q3}</p>
+      <p><b>👉Mốt $M_o=$</b> ${modeStr}</p>
+      <p><b>👉Phương sai $\\sigma^2=$</b> ${variance.toFixed(3)}</p>
+      <p><b>👉Độ lệch chuẩn $\\sigma=$</b> ${stddev.toFixed(3)}</p>
+      <p><b>👉Giá trị bất thường:</b> ${outlierText}</p>
+    </div>
+  </div>
+  `;
+
+   
+  document.getElementById('A_result').innerHTML = resultHTML;
+
+  setTimeout(()=>{ document.querySelector('#view_A .formula')?.classList.add('show'); document.querySelector('#view_A .output')?.classList.add('show'); },50);
+  if(window.MathJax) MathJax.typesetPromise();
+}
+
+/* =============== VIEW B functions (non-grouped) =============== */
+function B_addColumn(){
+  const vRow = document.getElementById('B_valuesRow');
+  const fRow = document.getElementById('B_freqRow');
+  const vCell = document.createElement('td');
+  const fCell = document.createElement('td');
+  vCell.innerHTML = '<input type="number">';
+  fCell.innerHTML = '<input type="number">';
+  vRow.appendChild(vCell);
+  fRow.appendChild(fCell);
+}
+function B_removeColumn(){
+  const vRow = document.getElementById('B_valuesRow');
+  const fRow = document.getElementById('B_freqRow');
+  const count = vRow.children.length;
+  if(count > 2){
+    vRow.removeChild(vRow.lastElementChild);
+    fRow.removeChild(fRow.lastElementChild);
+  } else alert("Không thể xóa thêm! Bảng phải có ít nhất 1 cột dữ liệu.");
+}
+function B_resetTable(){
+  document.getElementById('B_dataTable').innerHTML = `
+    <tr id="B_valuesRow"><th>Giá trị  x<sub>i</th><td><input type="number"></td><td><input type="number"></td><td><input type="number"></td></tr>
+    <tr id="B_freqRow"><th>Tần số f<sub>i</th><td><input type="number"></td><td><input type="number"></td><td><input type="number"></td></tr>
+  `;
+  document.getElementById('B_result').innerHTML = "";
+}
+
+
+
+
+function B_calcStats(){
+  try{
+    const valueInputs = [...document.querySelectorAll('#B_valuesRow input')];
+    const freqInputs  = [...document.querySelectorAll('#B_freqRow input')];
+    const values = valueInputs.map(inp => parseFloat(inp.value));
+    const freqs  = freqInputs.map(inp => parseFloat(inp.value));
+
+    // validation
+    for (let i = 0; i < values.length; i++){
+      if (isNaN(values[i])) { valueInputs[i].classList.add('shake'); valueInputs[i].focus(); alert("❌ Lỗi: Giá trị phải là số!"); setTimeout(()=>valueInputs[i].classList.remove('shake'),400); return;}
+    }
+    for (let i = 0; i < freqs.length; i++){
+      if (isNaN(freqs[i]) || freqs[i] < 0) { freqInputs[i].classList.add('shake'); freqInputs[i].focus(); alert("❌ Lỗi: Tần số phải là số và ≥ 0!"); setTimeout(()=>freqInputs[i].classList.remove('shake'),400); return;}
+    }
+    for (let i = 1; i < values.length; i++){
+      if (values[i] <= values[i-1]) { valueInputs[i].classList.add('shake'); valueInputs[i].focus(); alert("❌ Lỗi: Giá trị phải tăng dần (x₁ < x₂ < …)!"); setTimeout(()=>valueInputs[i].classList.remove('shake'),400); return;}
+    }
+
+    const data = values.map((x,i)=>({x,f:freqs[i]})).filter(o=>typeof o.x==='number' && typeof o.f==='number');
+    if(data.length===0){ alert("Vui lòng nhập đủ giá trị và tần số hợp lệ!"); return; }
+
+    const n = data.reduce((s,o)=>s+o.f,0);
+    const mean = data.reduce((s,o)=>s+o.x*o.f,0)/n;
+
+    const expanded = [];
+    data.sort((a,b)=>a.x-b.x).forEach(o=>{ for(let k=0;k<o.f;k++) expanded.push(o.x); });
+    expanded.sort((a,b)=>a-b);
+
+    function medianOfArray(arr){
+      const m=arr.length; if(m===0) return NaN;
+      if(m%2===1) return arr[(m-1)/2]; return (arr[m/2-1]+arr[m/2])/2;
+    }
+    const median = medianOfArray(expanded);
+
+    let lowerHalf, upperHalf;
+    if(n%2===0){ lowerHalf = expanded.slice(0,n/2); upperHalf = expanded.slice(n/2);}
+    else { lowerHalf = expanded.slice(0,Math.floor(n/2)); upperHalf = expanded.slice(Math.floor(n/2)+1); }
+    const Q1 = medianOfArray(lowerHalf); const Q3 = medianOfArray(upperHalf);
+
+    const variance = data.reduce((s,o)=>s+o.f*Math.pow(o.x-mean,2),0)/n;
+    const stddev = Math.sqrt(variance);
+
+    // mode logic
+    const freqValues = data.map(o=>o.f);
+    const allEqual = freqValues.every(f=>f===freqValues[0]);
+    let modeText = 'Không có dữ liệu';
+    if(freqValues.length===0) modeText='Không có dữ liệu';
+    else if(allEqual) modeText='Không có mốt';
+    else { const maxF = Math.max(...freqValues); const modes = data.filter(o=>o.f===maxF).map(o=>o.x); modeText = modes.length===1?String(modes[0]):modes.join(', '); }
+
+    const IQR = Q3 - Q1;
+    const LB = Q1 - 1.5*IQR; const UB = Q3 + 1.5*IQR;
+    const outliers = expanded.filter(v=>v<LB || v>UB);
+
+    document.getElementById('B_result').innerHTML = `
+      <div class="container-cols">
+        <div class="card formula">
+          <h3>📘 Công thức</h3>
+          <p><b>📌Trung bình cộng:</b> \\( \\bar{x} = \\dfrac{\\sum f_i x_i}{\\sum f_i} \\)</p>
+          <p><b>📌Trung vị:</b> \\( Me = \\begin{cases} x_{\\frac{n+1}{2}}, & n \\text{ lẻ} \\\\ \\dfrac{x_{\\frac{n}{2}} + x_{\\frac{n}{2}+1}}{2}, & n \\text{ chẵn} \\end{cases} \\)</p>
+          <p><b>📌Tứ phân vị:</b> \\( Q_1, Q_3 \\) là trung vị của nửa dưới và nửa trên mẫu</p>
+          <p><b>📌Mốt:</b> Giá trị có tần số lớn nhất</p>
+          <p><b>📌Phương sai:</b> \\( \\sigma^2 = \\dfrac{\\sum f_i (x_i - \\bar{x})^2}{\\sum f_i} \\)</p>
+<p><b>📌Độ lệch chuẩn:</b> \\( \\sigma = \\sqrt{\\sigma^2} \\)</p>
+
+<p><b>📌 Giá trị bất thường:</b>  
+  Các giá trị thỏa mãn:  
+  \\( x < Q_1 - 1.5 \\cdot (Q_3 - Q_1) \\)  
+   hoặc  
+  \\( x > Q_3 + 1.5 \\cdot (Q_3 - Q_1) \\)
+</p>
+
+  </div>
+        <div class="card output">
+          <h3>🧮 Kết quả</h3>
+          <p><b>👉Số phần tử: $n=$</b> ${n}</p>
+          <p><b>👉Trung bình cộng: $\\bar{x}=$</b> ${mean.toFixed(3)}</p>
+          <p><b>👉Trung vị :$M_e =$</b> ${median}</p>
+          <p><b>👉Tứ phân vị:</b> $Q_1 =$</b> ${isNaN(Q1)?'—':Q1}, $Q_2 =$ ${median}, <b>$Q_3=$</b> ${isNaN(Q3)?'—':Q3}</p>
+          <p><b>👉Mốt :$M_0$ =</b> ${modeText}</p>
+          <p><b>👉Phương sai $\\sigma^2=$</b> ${variance.toFixed(3)}</p>
+          <p><b>👉Độ lệch chuẩn $\\sigma=$</b> ${stddev.toFixed(3)}</p>
+          <p><b>👉Giá trị bất thường:</b> ${outliers.length?outliers.join(', '):'Không có'}</p>
+        
+</div>
+      </div>
+    `;
+    if(window.MathJax) MathJax.typesetPromise();
+  } catch(err){
+    console.error(err); alert('Lỗi khi tính toán — kiểm tra console.');
+  }
+}
+
+/* =============== VIEW C functions (grouped) =============== */
+/* helpers: add default 3 columns on load */
+(function C_init(){
+  // create 3 default columns
+  const rowClass=document.getElementById('C_row-class');
+  if(rowClass && rowClass.children.length===1){
+    C_addColumn("10-20",5);
+    C_addColumn("20-30",8);
+    C_addColumn("30-40",6);
+  }
+})();
+function C_addColumn(defaultGroup="", defaultFreq=""){
+  const rowClass=document.getElementById('C_row-class');
+  const rowMid=document.getElementById('C_row-mid');
+  const rowFreq=document.getElementById('C_row-freq');
+
+  const tdClass=document.createElement('td');
+  const tdMid=document.createElement('td');
+  const tdFreq=document.createElement('td');
+
+  tdClass.style.position = "relative";
+  tdFreq.style.position = "relative";
+
+  const inputClass=document.createElement('input');
+  inputClass.type='text';
+  inputClass.placeholder='a-b';
+  if(defaultGroup) inputClass.value=defaultGroup;
+  inputClass.oninput=C_updateMidpoints;
+  tdClass.appendChild(inputClass);
+
+  tdMid.textContent='–';
+
+  const inputFreq=document.createElement('input');
+  inputFreq.type='number';
+  inputFreq.min='0';
+  inputFreq.step='1';
+  if(defaultFreq) inputFreq.value=defaultFreq;
+  tdFreq.appendChild(inputFreq);
+
+  rowClass.appendChild(tdClass);
+  rowMid.appendChild(tdMid);
+  rowFreq.appendChild(tdFreq);
+
+  tdClass.classList.add('show'); tdMid.classList.add('show'); tdFreq.classList.add('show');
+}
+function C_removeColumn(){
+  const rowClass=document.getElementById('C_row-class');
+  if(rowClass.children.length <= 2) return; // không xóa hết
+
+  const tdClass = rowClass.lastElementChild;
+  const tdMid = document.getElementById('C_row-mid').lastElementChild;
+  const tdFreq = document.getElementById('C_row-freq').lastElementChild;
+
+  tdClass.remove(); tdMid.remove(); tdFreq.remove();
+}
+function C_updateMidpoints(){
+  const classInputs=document.querySelectorAll('#C_row-class input');
+  const midCells=document.querySelectorAll('#C_row-mid td:not(:first-child)');
+  classInputs.forEach((inp,i)=>{
+    const val=inp.value.trim();
+    if(val.includes('-')){
+      const parts = val.split('-').map(s=>s.trim());
+      const a = Number(parts[0]), b=Number(parts[1]);
+      if(!isNaN(a) && !isNaN(b)) midCells[i].textContent = ((a+b)/2).toFixed(2);
+    }
+  });
+}
+function C_resetPage(){
+  document.getElementById('C_dataTable').innerHTML = `
+    <tr id="C_row-class"><th>Nhóm [a;b)</th></tr>
+    <tr id="C_row-mid"><th>Giá trị đại diện m<sub>i</th></tr>
+    <tr id="C_row-freq"><th>Tần số f<sub>i </th></tr>
+  `;
+  document.getElementById('C_result').innerHTML = '';
+  C_addColumn("10-20",5); C_addColumn("20-30",8); C_addColumn("30-40",6);
+}
+function C_processGrouped(){
+  try{
+    const classInputs=document.querySelectorAll('#C_row-class input');
+    const freqInputs=document.querySelectorAll('#C_row-freq input');
+    const classes = [], freqs=[];
+    let valid=true;
+    classInputs.forEach(inp=>{
+      const v=inp.value.trim();
+      if(!v.includes('-') || v.split('-').some(x=>isNaN(Number(x.trim())))) { inp.classList.add('shake'); valid=false; setTimeout(()=>inp.classList.remove('shake'),360); }
+      else{
+        const [a,b] = v.split('-').map(s=>Number(s.trim()));
+        classes.push({min:a,max:b});
+      }
+    });
+    freqInputs.forEach(inp=>{
+      const v=inp.value.trim();
+      if(v===""|| isNaN(Number(v)) || Number(v)<0){ inp.classList.add('shake'); valid=false; setTimeout(()=>inp.classList.remove('shake'),360); }
+      else freqs.push(Number(inp.value));
+    });
+    if(!valid){ alert("Dữ liệu chưa hợp lệ!"); return; }
+    const mids = classes.map(c=>(c.min+c.max)/2);
+    const n = freqs.reduce((a,b)=>a+b,0);
+    if(n===0){ alert("Tổng tần số = 0!"); return; }
+    const mean = mids.reduce((s,m,i)=>s + m*freqs[i], 0)/n;
+    // cumulative frequency
+    const cf = []; freqs.reduce((acc,f,i)=> (cf[i]=acc+f, acc+f), 0);
+    // median
+    const medianPos = n/2;
+    const medIdx = cf.findIndex(c=>c>=medianPos);
+    const Lm = classes[medIdx].min;
+    const Fm = freqs[medIdx];
+    const cfPrev = medIdx>0?cf[medIdx-1]:0;
+    const h = classes[medIdx].max - classes[medIdx].min;
+    const median = Lm + ((medianPos - cfPrev)/Fm)*h;
+    // mode (grouped)
+    const idxMo = freqs.indexOf(Math.max(...freqs));
+    const f1 = freqs[idxMo];
+    const f0 = idxMo>0?freqs[idxMo-1]:0;
+    const f2 = idxMo<freqs.length-1?freqs[idxMo+1]:0;
+    const Lmo = classes[idxMo].min;
+    const mode = Lmo + ((f1 - f0)/(2*f1 - f0 - f2))*h;
+    // variance & std (use midpoints)
+    const variance = mids.reduce((s,m,i)=> s + freqs[i]*(m-mean)**2, 0)/n;
+    const stddev = Math.sqrt(variance);
+    // Q1, Q3
+    const q1Pos = n/4, q3Pos = 3*n/4;
+    const q1Idx = cf.findIndex(c=>c>=q1Pos);
+    const q3Idx = cf.findIndex(c=>c>=q3Pos);
+    const Lq1 = classes[q1Idx].min, Fq1 = freqs[q1Idx], cf1Prev = q1Idx>0?cf[q1Idx-1]:0;
+    const Lq3 = classes[q3Idx].min, Fq3 = freqs[q3Idx], cf3Prev = q3Idx>0?cf[q3Idx-1]:0;
+    const Q1 = Lq1 + ((q1Pos - cf1Prev)/Fq1)*h;
+    const Q3 = Lq3 + ((q3Pos - cf3Prev)/Fq3)*h;
+    const IQR = Q3 - Q1;
+    const lowerBound = Q1 - 1.5*IQR, upperBound = Q3 + 1.5*IQR;
+    const outliers = mids.filter(m=>m<lowerBound || m>upperBound);
+    // display
+    document.getElementById('C_result').innerHTML = `
+      
+<div class="container-cols">
+        <div class="card formula">
+                   
+<h3>📘 Công thức tính toán</h3>
+      <p><b>📌Giá trị đại diện:</b> $\m_i = \\frac{{x_i}+x_{i+1}}{2}$</p>
+      <p><b>📌Trung bình:</b> \\( \\bar{x} = \\frac{\\sum f_i m_i}{\\sum f_i} \\)</p>
+      <p><b>📌Trung vị:</b> \\( Me = L + \\frac{\\frac{n}{2}-F_{trước}}{f_{Me}}h \\)</p>
+      <p><b>📌Mốt:</b> $\M_0 = a_i+\\frac{m_i-m_{i-1}}{(m_i-m_{i-1})+(m_i-m_{i+1})}(a_{i+1}-\a_{i})$, với $\M_0 \\in [\a_i;\a_{i+1})$</p>
+      <p><b>📌Phương sai:</b> \\( \\sigma^2 = \\frac{\\sum f_i (m_i - \\bar{x})^2}{n} \\)</p>
+      <p><b>📌Độ lệch chuẩn:</b> \\( \\sigma = \\sqrt{\\sigma^2} \\)</p>
+      <p><b>📌Tứ phân vị:</b> $\Q_r = a_i+\\frac{\\frac{nr}{4}-(m_1+m_2+...+m_{i-1})}{m_i}(\a_{i+1}-\a_{i})$, với $\Q_r \\in [\a_i;\a_{i+1})$</p>
+      <p><b>📌Giá trị bất thường:</b> ngoài đoạn \\([Q_1-1.5ΔQ, Q_3+1.5ΔQ] \\)</p>
+    </div>
+
+        <div class="card output">
+          <h3>🧮 Kết quả</h3>
+          <p><b>👉Cỡ mẫu: $n=$</b> ${n}</p>
+          <p><b>👉Trung bình cộng:\\(\\bar{x}=\\)</b> ${mean.toFixed(3)}</p>
+          <p><b>👉Trung vị: $M_e=$</b> ${median.toFixed(3)}</p>
+          <p><b>👉Mốt: $Mo=$</b> ${mode.toFixed(3)}</p>
+          <p><b>👉Tứ phân vị:$Q_1 =$</b> ${Q1.toFixed(3)},  $Q_2$ = ${median.toFixed(3)}, 
+ <b> $Q_3$ =</b> ${Q3.toFixed(3)}</p>
+          <p><b>👉Phương sai: $\\sigma^2=$</b> ${variance.toFixed(3)}</p>
+          <p><b>👉Độ lệch chuẩn: $\\sigma=$</b> ${stddev.toFixed(3)}</p>
+          <p><b>👉Giá trị bất thường:</b> ${outliers.length?outliers.join(', '):'Không có'}</p>
+       
+
+ </div>
+      </div>
+    `;
+    if(window.MathJax) MathJax.typesetPromise();
+  } catch(err){
+    console.error(err); alert('Lỗi khi xử lý dữ liệu ghép nhóm.');
+  }
+}
+
+/* End of scripts */
+</script>
+
+</body>
+</html>
