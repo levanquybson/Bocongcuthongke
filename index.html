@@ -338,7 +338,7 @@ const resultHTML = `
 
  <h3>📘 Kết quả</h3>
 
-      <p><b>👉Số phần tử $n=$</b> ${n}</p>
+      <p><b>👉Số giá trị $n=$</b> ${n}</p>
       <p><b>👉Trung bình cộng $\\bar{x}̄=$</b> ${mean.toFixed(3)}</p>
       <p><b>👉Trung vị $M_e=Q_2=$</b> ${median}</p>
       <p><b>👉Tứ phân vị:</b> $Q_1 =$ ${Q1}, $Q_3$ = ${Q3}</p>
@@ -463,7 +463,7 @@ function B_calcStats(){
   </div>
         <div class="card output">
           <h3>🧮 Kết quả</h3>
-          <p><b>👉Số phần tử: $n=$</b> ${n}</p>
+          <p><b>👉Số giá trị: $n=$</b> ${n}</p>
           <p><b>👉Trung bình cộng: $\\bar{x}=$</b> ${mean.toFixed(3)}</p>
           <p><b>👉Trung vị :$M_e =$</b> ${median}</p>
           <p><b>👉Tứ phân vị:</b> $Q_1 =$</b> ${isNaN(Q1)?'—':Q1}, $Q_2 =$ ${median}, <b>$Q_3=$</b> ${isNaN(Q3)?'—':Q3}</p>
@@ -720,5 +720,6 @@ function C_processGrouped(){
 </script>
 </body>
 </html>
+
 
 
