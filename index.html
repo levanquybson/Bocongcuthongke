@@ -232,7 +232,8 @@ th:nth-child(1), td:nth-child(1) {
 <!-- ==================== VIEW C: grouped data (classes) ==================== -->
 <section id="view_C" class="view">
   <h3 style="text-align:center">📊 CÁC SỐ ĐẶC TRUNG CỦA MẪU SỐ LIỆU GHÉP NHÓM</h3>
-   <p>Nhập nhóm (ví dụ nhóm [1;2) thì nhập <b>1-2</b>) ở dòng 1 và <b>tần số</b> ở dòng 3:</p>
+  <p>Nhập nhóm (ví dụ nhóm [1;2) thì nhập <b>1-2</b>) ở dòng 1, <span style="color:red">Số âm được viết trong dấu (). Ví dụ [-2;1) thì nhập (-2)-1</span> và <b>tần số</b> ở dòng 3:</p>
+
 
   <table id="C_dataTable">
     <tr id="C_row-class"><th>Nhóm [a;b)</th></tr>
@@ -535,18 +536,46 @@ function C_removeColumn(){
 
   tdClass.remove(); tdMid.remove(); tdFreq.remove();
 }
-function C_updateMidpoints(){
-  const classInputs=document.querySelectorAll('#C_row-class input');
-  const midCells=document.querySelectorAll('#C_row-mid td:not(:first-child)');
-  classInputs.forEach((inp,i)=>{
-    const val=inp.value.trim();
-    if(val.includes('-')){
-      const parts = val.split('-').map(s=>s.trim());
-      const a = Number(parts[0]), b=Number(parts[1]);
-      if(!isNaN(a) && !isNaN(b)) midCells[i].textContent = ((a+b)/2).toFixed(2);
+function C_updateMidpoints() {
+  const classInputs = document.querySelectorAll('#C_row-class input');
+  const midCells = document.querySelectorAll('#C_row-mid td:not(:first-child)');
+
+  // regex: bắt cả chuỗi dạng: (a) - (b) hoặc a - b
+  // group 1 = a, group 3 = b
+  const rangeRE = /^\s*\(?\s*([+-]?\d+(?:\.\d+)?)\s*\)?\s*-\s*\(?\s*([+-]?\d+(?:\.\d+)?)\s*\)?\s*$/;
+
+  classInputs.forEach((inp, i) => {
+    let val = inp.value.trim();
+
+    // chuẩn hóa các dấu trừ lạ thành '-' (không xóa ngoặc)
+    val = val.replace(/[−–—]/g, "-");
+
+    const m = val.match(rangeRE);
+
+    if (m) {
+      const a = Number(m[1]);
+      const b = Number(m[2]);
+      if (!isNaN(a) && !isNaN(b)) {
+        midCells[i].textContent = ((a + b) / 2).toFixed(2);
+        return;
+      }
     }
+
+    // nếu không khớp định dạng range, thử lấy hai số bất kỳ (fallback)
+    const nums = val.match(/[+-]?\d+(?:\.\d+)?/g);
+    if (nums && nums.length >= 2) {
+      const a = Number(nums[0]), b = Number(nums[1]);
+      if (!isNaN(a) && !isNaN(b)) {
+        midCells[i].textContent = ((a + b) / 2).toFixed(2);
+        return;
+      }
+    }
+
+    // không đủ dữ liệu -> hiển thị dấu gạch
+    midCells[i].textContent = "–";
   });
 }
+
 function C_resetPage(){
   document.getElementById('C_dataTable').innerHTML = `
     <tr id="C_row-class"><th>Nhóm [a;b)</th></tr>
@@ -562,14 +591,24 @@ function C_processGrouped(){
     const freqInputs=document.querySelectorAll('#C_row-freq input');
     const classes = [], freqs=[];
     let valid=true;
+    
     classInputs.forEach(inp=>{
-      const v=inp.value.trim();
-      if(!v.includes('-') || v.split('-').some(x=>isNaN(Number(x.trim())))) { inp.classList.add('shake'); valid=false; setTimeout(()=>inp.classList.remove('shake'),360); }
-      else{
-        const [a,b] = v.split('-').map(s=>Number(s.trim()));
-        classes.push({min:a,max:b});
-      }
-    });
+  const v = inp.value.trim().replace(/[−–—]/g, "-"); // chuẩn hóa dấu trừ
+  const m = v.match(/^\s*\(?\s*([+-]?\d+(?:\.\d+)?)\s*\)?\s*-\s*\(?\s*([+-]?\d+(?:\.\d+)?)\s*\)?\s*$/);
+  if(!m) { 
+    inp.classList.add('shake'); 
+    valid=false; 
+    setTimeout(()=>inp.classList.remove('shake'),360); 
+  } else {
+    const a = Number(m[1]), b = Number(m[2]);
+    classes.push({min:a,max:b});
+  }
+});
+
+  
+  
+    
+    
     freqInputs.forEach(inp=>{
       const v=inp.value.trim();
       if(v===""|| isNaN(Number(v)) || Number(v)<0){ inp.classList.add('shake'); valid=false; setTimeout(()=>inp.classList.remove('shake'),360); }
@@ -681,4 +720,5 @@ function C_processGrouped(){
 </script>
 </body>
 </html>
+
 
