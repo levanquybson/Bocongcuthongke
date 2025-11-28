@@ -9,7 +9,6 @@
 <style>
   /* ====== Global theme & layout ====== */
 
- /* ====== Global theme & layout ====== */
   :root{
     --bg:#f7f9fb;
     --panel:#ffffff;
@@ -73,11 +72,6 @@
   .show{ opacity:1; transform:none; transition:all .45s ease; }
   .hide{ opacity:0; transform:translateY(10px); transition:all .25s ease; }
 
-  /* shake for invalid */
-  @keyframes shake { 0%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} 100%{transform:translateX(0)} }
-  .shake{ animation:shake .36s ease; border-color:#ef4444 !important; }
-
-  pre.small { background:#f1f6f5; padding:8px; border-radius:8px; overflow:auto; font-size:13px; }
 
   /* Responsive */
   @media(max-width:900px){
@@ -698,6 +692,7 @@ function C_processGrouped(){
 
 </body>
 </html>
+
 
 
 
