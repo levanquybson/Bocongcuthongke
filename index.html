@@ -92,12 +92,54 @@
   .tooltip-modern{ position:absolute; background:var(--teal-600); color:white; padding:6px 10px; border-radius:8px; font-size:13px; box-shadow:0 6px 18px rgba(2,6,23,0.12); transform:translateY(-8px); white-space:nowrap; z-index:1000; }
   .tooltip-modern::after{ content:''; position:absolute; left:50%; transform:translateX(-50%); bottom:-6px; border-width:6px 6px 0 6px; border-style:solid; border-color:var(--teal-600) transparent transparent transparent; }
 
- /* Result box */
-  #A_result { margin-top:20px; background:var(--code-bg); border-left:6px solid var(--teal-600); padding:16px; border-radius:8px; font-size:16px; box-shadow:var(--shadow); }
+  /* Result box */
+#A_result {
+  margin-top: 24px;
+  background: #F0FFFA;                    /* nền xanh nhạt dễ nhìn */
+  border-left: 8px solid #0077ff;          /* xanh dương đậm – rất nổi */
+  padding: 20px 22px;
+  border-radius: 12px;
+  font-size: 17px;
+  color: #0f172a;                           /* chữ đậm */
+  box-shadow: 0 4px 18px rgba(0, 119, 255, 0.35);
+  transition: 0.25s ease;
+}
+#A_result:hover {
+  box-shadow: 0 6px 26px rgba(0, 119, 255, 0.45);
+  transform: translateY(-2px);
+}
 
- #B_result { margin-top:20px; background:var(--code-bg); border-left:6px solid var(--teal-600); padding:16px; border-radius:8px; font-size:16px; box-shadow:var(--shadow); }
+#B_result {
+  margin-top: 24px;
+  background: #F0FFFA;                    /* nền xanh nhạt dễ nhìn */
+  border-left: 8px solid #0077ff;          /* xanh dương đậm – rất nổi */
+  padding: 20px 22px;
+  border-radius: 12px;
+  font-size: 17px;
+  color: #0f172a;                           /* chữ đậm */
+  box-shadow: 0 4px 18px rgba(0, 119, 255, 0.35);
+  transition: 0.25s ease;
+}
+#B_result:hover {
+  box-shadow: 0 6px 26px rgba(0, 119, 255, 0.45);
+  transform: translateY(-2px);
+}
 
- #C_result { margin-top:20px; background:var(--code-bg); border-left:6px solid var(--teal-600); padding:16px; border-radius:8px; font-size:16px; box-shadow:var(--shadow); }
+#C_result {
+  margin-top: 24px;
+  background: #F0FFFA;                    /* nền xanh nhạt dễ nhìn */
+  border-left: 8px solid #0077ff;          /* xanh dương đậm – rất nổi */
+  padding: 20px 22px;
+  border-radius: 12px;
+  font-size: 17px;
+  color: #0f172a;                           /* chữ đậm */
+  box-shadow: 0 4px 18px rgba(0, 119, 255, 0.35);
+  transition: 0.25s ease;
+}
+#C_result:hover {
+  box-shadow: 0 6px 26px rgba(0, 119, 255, 0.45);
+  transform: translateY(-2px);
+}
 
 
   body { font-family: "Times New Roman"; margin: 30px; background: #fff9e6; }
@@ -700,6 +742,7 @@ function C_processGrouped(){
 
 </body>
 </html>
+
 
 
 
