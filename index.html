@@ -368,7 +368,7 @@ const resultHTML = `
       <p><b>👉Mốt $M_o=$</b> ${modeStr}</p>
        <b style="color: #006400;">2. Các số đặc trưng đo độ phân tán</b>
 <p><b>👉Khoảng biến thiên: $R = x_{max} - x_{min} =  ${range}$</p>
-
+ <p><b>👉Khoảng tứ phân vị: $ΔQ=$</b> ${IQR.toFixed(3)}</p>
       <p><b>👉Phương sai $\\sigma^2=$</b> ${variance.toFixed(3)}</p>
       <p><b>👉Độ lệch chuẩn $\\sigma=$</b> ${stddev.toFixed(3)}</p>
       <p><b>👉Giá trị bất thường:</b> ${outlierText}</p>
@@ -495,11 +495,11 @@ const range = expanded[expanded.length - 1] - expanded[0];
           <p><b>👉Trung bình cộng: $\\bar{x}=$</b> ${mean.toFixed(3)}</p>
           <p><b>👉Trung vị :$M_e =$</b> ${median}</p>
           <p><b>👉Tứ phân vị:</b> $Q_1 =$</b> ${isNaN(Q1)?'—':Q1}, $Q_2 =$ ${median}, <b>$Q_3=$</b> ${isNaN(Q3)?'—':Q3}</p>
-          <p><b>👉Khoảng tứ phân vị:$ΔQ =$</b> ${IQR.toFixed(3)},  
-          <p><b>👉Mốt :$M_0$ =</b> ${modeText}</p>
+           <p><b>👉Mốt :$M_0$ =</b> ${modeText}</p>
            <b style="color: #006400;">2.Các số đặc trưng đo độ phân tán</b>
  <p><b>👉Khoảng biến thiên: $R = x_{max} - x_{min} =$<b>${range}</b></p>
  <p><b>👉Khoảng tứ phân vị:$ΔQ =$</b> ${IQR.toFixed(3)},  
+
           <p><b>👉Phương sai $\\sigma^2=$</b> ${variance.toFixed(3)}</p>
           <p><b>👉Độ lệch chuẩn $\\sigma=$</b> ${stddev.toFixed(3)}</p>
           <p><b>👉Giá trị bất thường:</b> ${outliers.length?outliers.join(', '):'Không có'}</p>
@@ -682,6 +682,32 @@ function C_processGrouped(){
     const IQR = Q3 - Q1;
     const lowerBound = Q1 - 1.5*IQR, upperBound = Q3 + 1.5*IQR;
     const outliers = mids.filter(m=>m<lowerBound || m>upperBound);
+  
+    // ===== Khoảng biến thiên (Range) — XỬ LÝ NHÓM ĐẦU/CHỐT CÓ f = 0 =====
+// tìm index nhóm đầu tiên có tần số > 0
+let firstNonZero = -1;
+for (let i = 0; i < freqs.length; i++) {
+  if (freqs[i] > 0) { firstNonZero = i; break; }
+}
+// tìm index nhóm cuối cùng có tần số > 0
+let lastNonZero = -1;
+for (let i = freqs.length - 1; i >= 0; i--) {
+  if (freqs[i] > 0) { lastNonZero = i; break; }
+}
+
+if (firstNonZero === -1 || lastNonZero === -1) {
+  // an toàn: tổng tần số = 0 (đã kiểm tra trước) — nhưng vẫn phòng ngừa
+  alert("Không thể tính khoảng biến thiên: tất cả các tần số bằng 0!");
+  return;
+}
+
+const xMin = classes[firstNonZero].min;   // nếu nhóm đầu có f=0, firstNonZero sẽ là nhóm kế tiếp có f>0
+const xMax = classes[lastNonZero].max;    // nếu nhóm cuối có f=0, lastNonZero sẽ là nhóm liền trước có f>0
+const range = xMax - xMin;
+
+
+    
+    
     // display
     document.getElementById('C_result').innerHTML = `
       
@@ -702,11 +728,16 @@ function C_processGrouped(){
         <div class="card output">
           <h3>🧮 Kết quả</h3>
           <p><b>👉Cỡ mẫu: $n=$</b> ${n}</p>
+              <b style="color: #006400;">1. Các số đặc trưng đo xu thế trung tâm</b>
           <p><b>👉Trung bình cộng:\\(\\bar{x}=\\)</b> ${mean.toFixed(3)}</p>
           <p><b>👉Trung vị: $M_e=$</b> ${median.toFixed(3)}</p>
           <p><b>👉Mốt: $Mo=$</b> ${mode.toFixed(3)}</p>
           <p><b>👉Tứ phân vị:$Q_1 =$</b> ${Q1.toFixed(3)},  $Q_2$ = ${median.toFixed(3)}, 
  <b> $Q_3$ =</b> ${Q3.toFixed(3)}</p>
+
+  <b style="color: #006400;">2.Các số đặc trưng đo độ phân tán</b>
+<p><b>👉Khoảng biến thiên: $R = x_{max} - x_{min} =$</b> 
+${xMax} − ${xMin} = <b>${range.toFixed(3)}</b></p>
  <p><b>👉Khoảng tứ phân vị:$ΔQ =$</b> ${IQR.toFixed(3)},  
           <p><b>👉Phương sai: $\\sigma^2=$</b> ${variance.toFixed(3)}</p>
           <p><b>👉Độ lệch chuẩn: $\\sigma=$</b> ${stddev.toFixed(3)}</p>
@@ -752,6 +783,7 @@ function C_processGrouped(){
 
 </body>
 </html>
+
 
 
 
