@@ -335,6 +335,7 @@ function A_processData(){
   const upperBound = Q3+1.5*IQR;
   const outliers = sorted.filter(v=>v<lowerBound || v>upperBound);
   const outlierText = outliers.length>0 ? outliers.join(', ') : 'Không có';
+  const range = sorted[sorted.length - 1] - sorted[0];
 
   
  
@@ -353,17 +354,21 @@ const resultHTML = `
       <p><b>📌Mốt:</b> giá trị xuất hiện nhiều nhất</p>
       <p><b>📌Phương sai:</b> \\(\\sigma^2 = \\dfrac{\\sum (x_i-\\bar{x})^2}{n}\\)</p>
       <p><b>📌Độ lệch chuẩn:</b> \\(\\sigma = \\sqrt{\\sigma^2}\\)</p>
-      <p><b>📌Giá trị bất thường:</b> ngoài đoạn $[\Q_1-1.5 ΔQ; \Q_3+1.5.ΔQ]$</p>
+      <p><b>📌Giá trị bất thường:</b> ngoài đoạn $[\Q_1-1.5 ΔQ; \Q_3+1.5.ΔQ]$ với $ΔQ=\Q_3-Q_1$</p>
     </div> 
     <div class="output">
 
  <h3>📘 Kết quả</h3>
 
       <p><b>👉Số giá trị $n=$</b> ${n}</p>
+      <b style="color: #006400;">1. Các số đặc trưng đo xu thế trung tâm</b>
       <p><b>👉Trung bình cộng $\\bar{x}̄=$</b> ${mean.toFixed(3)}</p>
       <p><b>👉Trung vị $M_e=Q_2=$</b> ${median}</p>
       <p><b>👉Tứ phân vị:</b> $Q_1 =$ ${Q1}, $Q_3$ = ${Q3}</p>
       <p><b>👉Mốt $M_o=$</b> ${modeStr}</p>
+       <b style="color: #006400;">2. Các số đặc trưng đo độ phân tán</b>
+<p><b>👉Khoảng biến thiên: $R = x_{max} - x_{min} =  ${range}$</p>
+
       <p><b>👉Phương sai $\\sigma^2=$</b> ${variance.toFixed(3)}</p>
       <p><b>👉Độ lệch chuẩn $\\sigma=$</b> ${stddev.toFixed(3)}</p>
       <p><b>👉Giá trị bất thường:</b> ${outlierText}</p>
@@ -462,6 +467,7 @@ function B_calcStats(){
     const IQR = Q3 - Q1;
     const LB = Q1 - 1.5*IQR; const UB = Q3 + 1.5*IQR;
     const outliers = expanded.filter(v=>v<LB || v>UB);
+const range = expanded[expanded.length - 1] - expanded[0];
 
     document.getElementById('B_result').innerHTML = `
       <div class="container-cols">
@@ -485,11 +491,15 @@ function B_calcStats(){
         <div class="card output">
           <h3>🧮 Kết quả</h3>
           <p><b>👉Số giá trị: $n=$</b> ${n}</p>
+          <b style="color: #006400;">1. Các số đặc trưng đo xu thế trung tâm</b>
           <p><b>👉Trung bình cộng: $\\bar{x}=$</b> ${mean.toFixed(3)}</p>
           <p><b>👉Trung vị :$M_e =$</b> ${median}</p>
           <p><b>👉Tứ phân vị:</b> $Q_1 =$</b> ${isNaN(Q1)?'—':Q1}, $Q_2 =$ ${median}, <b>$Q_3=$</b> ${isNaN(Q3)?'—':Q3}</p>
           <p><b>👉Khoảng tứ phân vị:$ΔQ =$</b> ${IQR.toFixed(3)},  
           <p><b>👉Mốt :$M_0$ =</b> ${modeText}</p>
+           <b style="color: #006400;">2.Các số đặc trưng đo độ phân tán</b>
+ <p><b>👉Khoảng biến thiên: $R = x_{max} - x_{min} =$<b>${range}</b></p>
+ <p><b>👉Khoảng tứ phân vị:$ΔQ =$</b> ${IQR.toFixed(3)},  
           <p><b>👉Phương sai $\\sigma^2=$</b> ${variance.toFixed(3)}</p>
           <p><b>👉Độ lệch chuẩn $\\sigma=$</b> ${stddev.toFixed(3)}</p>
           <p><b>👉Giá trị bất thường:</b> ${outliers.length?outliers.join(', '):'Không có'}</p>
@@ -742,6 +752,7 @@ function C_processGrouped(){
 
 </body>
 </html>
+
 
 
 
