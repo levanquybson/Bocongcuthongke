@@ -506,26 +506,27 @@ function toFractionMJ(num, tol = 1e-10) {
   const sign = num < 0 ? "-" : "";
   num = Math.abs(num);
 
-  let h1 = 1, h2 = 0, k1 = 0, k2 = 1;
+  let h1 = 1, h2 = 0;
+  let k1 = 0, k2 = 1;
   let b = num;
 
   while (true) {
-    let a = Math.floor(b);
-    let h = a * h1 + h2;
-    let k = a * k1 + k2;
+    const a = Math.floor(b);
+    const h = a * h1 + h2;
+    const k = a * k1 + k2;
 
     if (Math.abs(num - h / k) < tol) {
-      return `${sign} \\frac{${h1}}{${k1}}`;
+      return `${sign}\\frac{${h}}{${k}}`; // ✅ SỬA Ở ĐÂY
     }
 
     h2 = h1; h1 = h;
     k2 = k1; k1 = k;
 
     b = 1 / (b - a);
-    if (!isFinite(b)) break; // tránh lặp vô hạn
+    if (!isFinite(b)) break;
   }
 
-  return sign + num.toFixed(3); // fallback an toàn
+  return sign + num.toFixed(3);
 }
 
 function exactOrApprox(frac, decimal){
@@ -545,6 +546,22 @@ function exactOrApprox(frac, decimal){
 }
 
 
+function exactFraction(numerator, denominator){
+  if(denominator === 0) return "—";
+
+  function gcd(a,b){
+    while(b !== 0){
+      [a,b] = [b, a % b];
+    }
+    return Math.abs(a);
+  }
+
+  const g = gcd(numerator, denominator);
+  const num = numerator / g;
+  const den = denominator / g;
+
+  return den === 1 ? `${num}` : `\\frac{${num}}{${den}}`;
+}
 
 
 
@@ -570,7 +587,11 @@ function B_calcStats(){
     if(data.length===0){ alert("Vui lòng nhập đủ giá trị và tần số hợp lệ!"); return; }
 
     const n = data.reduce((s,o)=>s+o.f,0);
-    const mean = data.reduce((s,o)=>s+o.x*o.f,0)/n;
+const sumFx = data.reduce((s,o)=>s + o.x * o.f, 0);
+const mean = sumFx / n;
+
+const meanFrac = exactFraction(sumFx, n);
+const meanDec  = mean.toFixed(3);
 
     const expanded = [];
     data.sort((a,b)=>a.x-b.x).forEach(o=>{ for(let k=0;k<o.f;k++) expanded.push(o.x); });
@@ -629,7 +650,12 @@ const range = expanded[expanded.length - 1] - expanded[0];
 <b style="color: #006400;">1. Các số đặc trưng đo xu thế trung tâm</b>
         
 <p><b>👉Trung bình cộng:</b> 
-\\( \\bar{x} = ${toFractionMJ(mean)}\ ${exactOrApprox(toFractionMJ(mean), +mean.toFixed(3))} \\)
+\\[
+\\bar{x}
+= ${meanFrac}
+\\approx ${meanDec}
+\\]
+
 </p>
 <p><b>👉Trung vị:</b> 
 \\( M_e = ${toFractionMJ(median)}\ ${exactOrApprox(toFractionMJ(median), +median.toFixed(3))} \\)
@@ -665,7 +691,6 @@ const range = expanded[expanded.length - 1] - expanded[0];
 </div>
       </div>
     `;
-
     if(window.MathJax) MathJax.typesetPromise();
   } catch(err){
     console.error(err); alert('Lỗi khi tính toán — kiểm tra console.');
@@ -942,6 +967,7 @@ ${xMax} − ${xMin} = <b>${range.toFixed(3)}</b></p>
 
 </body>
 </html>
+
 
 
 
