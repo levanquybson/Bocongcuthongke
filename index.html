@@ -801,6 +801,143 @@ function C_resetPage(){
   document.getElementById('C_result').innerHTML = '';
   C_addColumn("10-20",5); C_addColumn("20-30",8); C_addColumn("30-40",6);
 }
+
+// Hàm rút gọn và hiển thị số dưới dạng phân số + thập phân
+function formatNumber(x, decimals = 3) {
+  // Nếu là số nguyên
+  if (Number.isInteger(x)) return x.toString();
+
+  // Làm tròn để so sánh chính xác
+  const rounded = Number(x.toFixed(decimals));
+
+  // Nếu số làm tròn khác xa → chỉ hiển thị số thập phân
+  if (Math.abs(x - rounded) > 1e-12) {
+    return rounded.toString().replace('.', ',');
+  }
+
+  // Thử quy đổi sang phân số đơn giản (mẫu <= 1000)
+  let num = rounded;
+  let den = 1;
+  
+  while (!Number.isInteger(num) && den <= 1000) {
+    num *= 10;
+    den *= 10;
+  }
+
+  if (!Number.isInteger(num) || den > 1000) {
+    // Không đổi được → chỉ hiện thập phân
+    return rounded.toString().replace('.', ',');
+  }
+
+  // Rút gọn
+  const g = gcd(num, den);
+  num /= g; den /= g;
+
+  // Nếu mẫu số đẹp (<= 100) → hiển thị phân số
+  if (den <= 100) {
+    return `\\(\\frac{${num}}{${den}}\\) ≈ ${rounded.toString().replace('.', ',')}`;
+  }
+
+  // Ngược lại: chỉ hiện số thập phân
+  return rounded.toString().replace('.', ',');
+}
+
+// GCD
+function gcd(a, b) { return b ? gcd(b, a % b) : Math.abs(a); }
+
+
+
+function varianceFractionTHPT(classes, freqs) {
+  const n = freqs.reduce((a, b) => a + b, 0);
+  if (n === 0) throw new Error("Tổng tần số bằng 0");
+
+  // ===== 1. TÌM HỆ SỐ KHỬ MẪU =====
+  function decimals(x) {
+    const s = x.toString();
+    return s.includes('.') ? s.split('.')[1].length : 0;
+  }
+
+  let k = 0;
+  classes.forEach(c => {
+    k = Math.max(k, decimals(c.min), decimals(c.max));
+  });
+
+  const scale = 10 ** k;
+
+  // ===== 2. TRUNG BÌNH (PHÂN SỐ NGUYÊN) =====
+  let meanNum = 0;
+  let meanDen = 2 * n * scale;
+
+  classes.forEach((c, i) => {
+    meanNum += freqs[i] * (c.min + c.max) * scale;
+  });
+
+  meanNum = Math.round(meanNum);
+
+  let g = gcd(meanNum, meanDen);
+  meanNum /= g;
+  meanDen /= g;
+
+  // ===== 3. TÍNH E(X²) =====
+  let EX2_Num = 0;
+  let EX2_Den = 4 * n * scale * scale;
+
+  classes.forEach((c, i) => {
+    const t = (c.min + c.max) * scale;
+    EX2_Num += freqs[i] * t * t;
+  });
+
+  EX2_Num = Math.round(EX2_Num);
+
+  g = gcd(EX2_Num, EX2_Den);
+  EX2_Num /= g;
+  EX2_Den /= g;
+
+  // ===== 4. PHƯƠNG SAI = E(X²) − (EX)² =====
+  let vNum =
+    EX2_Num * meanDen * meanDen -
+    meanNum * meanNum * EX2_Den;
+
+  let vDen = EX2_Den * meanDen * meanDen;
+
+  g = gcd(vNum, vDen);
+  vNum /= g;
+  vDen /= g;
+
+  return {
+    frac: vDen === 1 ? `${vNum}` : `\\frac{${vNum}}{${vDen}}`,
+    value: vNum / vDen
+  };
+}
+
+
+function sqrtFractionLatex(num, den) {
+  // rút gọn căn nếu có thể
+  let a = 1, b = 1;
+  let n = num, d = den;
+
+  for (let i = 2; i * i <= n; i++) {
+    while (n % (i * i) === 0) {
+      n /= i * i;
+      a *= i;
+    }
+  }
+
+  for (let i = 2; i * i <= d; i++) {
+    while (d % (i * i) === 0) {
+      d /= i * i;
+      b *= i;
+    }
+  }
+
+  // sinh LaTeX
+  if (n === 1 && d === 1) return `${a / b}`;
+  if (d === 1) return `\\frac{${a}\\sqrt{${n}}}{${b}}`;
+  return `\\frac{${a}\\sqrt{${n}}}{${b}\\sqrt{${d}}}`;
+}
+
+
+
 function C_processGrouped(){
   try{
     const classInputs=document.querySelectorAll('#C_row-class input');
@@ -834,8 +971,33 @@ function C_processGrouped(){
     const mids = classes.map(c=>(c.min+c.max)/2);
     const n = freqs.reduce((a,b)=>a+b,0);
     if(n===0){ alert("Tổng tần số = 0!"); return; }
-    const mean = mids.reduce((s,m,i)=>s + m*freqs[i], 0)/n;
-    // cumulative frequency
+    
+
+
+// ===== TRUNG BÌNH – DẠNG PHÂN SỐ CHÍNH XÁC =====
+let meanNum = 0;   // tử số
+let meanDen = 2 * n; // mẫu số
+
+classes.forEach((c, i) => {
+  meanNum += freqs[i] * (c.min + c.max);
+});
+
+// rút gọn
+const gMean = gcd(meanNum, meanDen);
+meanNum /= gMean;
+meanDen /= gMean;
+
+// giá trị thập phân (chỉ để dùng nội bộ)
+const mean = meanNum / meanDen;
+
+// chuỗi hiển thị
+const meanFrac = meanDen === 1
+  ? `${meanNum}`
+  : `\\frac{${meanNum}}{${meanDen}}`;
+    
+
+
+// cumulative frequency
     const cf = []; freqs.reduce((acc,f,i)=> (cf[i]=acc+f, acc+f), 0);
     // median
     const medianPos = n/2;
@@ -853,8 +1015,11 @@ function C_processGrouped(){
     const Lmo = classes[idxMo].min;
     const mode = Lmo + ((f1 - f0)/(2*f1 - f0 - f2))*h;
     // variance & std (use midpoints)
-    const variance = mids.reduce((s,m,i)=> s + freqs[i]*(m-mean)**2, 0)/n;
-    const stddev = Math.sqrt(variance);
+   
+ const variance = mids.reduce((s,m,i)=> s + freqs[i]*(m-mean)**2, 0)/n;
+    
+
+const stddev = Math.sqrt(variance);
     // Q1, Q3
     const q1Pos = n/4, q3Pos = 3*n/4;
     const q1Idx = cf.findIndex(c=>c>=q1Pos);
@@ -866,8 +1031,8 @@ function C_processGrouped(){
     const IQR = Q3 - Q1;
     const lowerBound = Q1 - 1.5*IQR, upperBound = Q3 + 1.5*IQR;
     const outliers = mids.filter(m=>m<lowerBound || m>upperBound);
-  
-    // ===== Khoảng biến thiên (Range) — XỬ LÝ NHÓM ĐẦU/CHỐT CÓ f = 0 =====
+// ===== Khoảng biến thiên (Range) =====
+// ===== Khoảng biến thiên (Range) — XỬ LÝ NHÓM ĐẦU/CHỐT CÓ f = 0 =====
 // tìm index nhóm đầu tiên có tần số > 0
 let firstNonZero = -1;
 for (let i = 0; i < freqs.length; i++) {
@@ -889,12 +1054,11 @@ const xMin = classes[firstNonZero].min;   // nếu nhóm đầu có f=0, firstNo
 const xMax = classes[lastNonZero].max;    // nếu nhóm cuối có f=0, lastNonZero sẽ là nhóm liền trước có f>0
 const range = xMax - xMin;
 
-
-    
-    
+const varResult = varianceFractionTHPT(classes, freqs);
     // display
     document.getElementById('C_result').innerHTML = `
-      
+      MathJax.typeset();
+
 <div class="container-cols">
         <div class="card formula">
                    
@@ -912,25 +1076,37 @@ const range = xMax - xMin;
         <div class="card output">
           <h3>🧮 Kết quả</h3>
           <p><b>👉Cỡ mẫu: $n=$</b> ${n}</p>
-              <b style="color: #006400;">1. Các số đặc trưng đo xu thế trung tâm</b>
-          <p><b>👉Trung bình cộng:\\(\\bar{x}=\\)</b> ${mean.toFixed(3)}</p>
-          <p><b>👉Trung vị: $M_e=$</b> ${median.toFixed(3)}</p>
-          <p><b>👉Mốt: $Mo=$</b> ${mode.toFixed(3)}</p>
-          <p><b>👉Tứ phân vị:$Q_1 =$</b> ${Q1.toFixed(3)},  $Q_2$ = ${median.toFixed(3)}, 
- <b> $Q_3$ =</b> ${Q3.toFixed(3)}</p>
+          <b style="color: #006400;">1. Các số đặc trưng đo xu thế trung tâm</b>
+<p><b>👉Trung bình cộng:</b>
+\\[
+\\bar x = ${meanFrac} \\approx ${mean.toFixed(3)}
+\\]
+</p>       
+<p><b>👉Trung vị: $M_e=$</b> ${formatNumber(median)}</p> 
+<p><b>👉Mốt: $Mo=$</b> ${formatNumber(mode)}</p>
+<p><b>👉Tứ phân vị: $Q_1=$</b> ${formatNumber(Q1)},  
+$Q_2$ = ${formatNumber(median)}, 
+<b>$Q_3=$</b> ${formatNumber(Q3)}</p>
 
-  <b style="color: #006400;">2.Các số đặc trưng đo độ phân tán</b>
+ <b style="color: #006400;">2.Các số đặc trưng đo độ phân tán</b>
+
 <p><b>👉Khoảng biến thiên: $R = x_{max} - x_{min} =$</b> 
 ${xMax} − ${xMin} = <b>${range.toFixed(3)}</b></p>
- <p><b>👉Khoảng tứ phân vị:$ΔQ =$</b> ${IQR.toFixed(3)},  
-          <p><b>👉Phương sai: $\\sigma^2=$</b> ${variance.toFixed(3)}</p>
-          <p><b>👉Độ lệch chuẩn: $\\sigma=$</b> ${stddev.toFixed(3)}</p>
+
+
+<p><b>👉Khoảng tứ phân vị: $ΔQ=$</b> ${formatNumber(IQR)}</p>
+<p><b>👉Phương sai:</b>
+\\[
+\\sigma^2 = ${varResult.frac} \\approx ${varResult.value.toFixed(3)}
+\\]
+</p>
+<p><b>👉Độ lệch chuẩn: $\\sigma=$</b> ${formatNumber(stddev)}</p>
           <p><b>👉Giá trị bất thường:</b> ${outliers.length?outliers.join(', '):'Không có'}</p>
        
 
  </div>
      </div> 
-    `;
+       `;
     if(window.MathJax) MathJax.typesetPromise();
   } catch(err){
     console.error(err); alert('Lỗi khi xử lý dữ liệu ghép nhóm.');
@@ -967,6 +1143,7 @@ ${xMax} − ${xMin} = <b>${range.toFixed(3)}</b></p>
 
 </body>
 </html>
+
 
 
 
